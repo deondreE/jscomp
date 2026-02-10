@@ -7,11 +7,13 @@ const ObjType = @import("heap_object.zig").ObjType;
 pub const ObjObject = struct {
     base: HeapObject,
     properties: std.StringHashMap(Value),
+    proto: ?*ObjObject,
 
-    pub fn init(allocator: std.mem.Allocator) ObjObject {
+    pub fn init(allocator: std.mem.Allocator, proto: ?*ObjObject) ObjObject {
         return ObjObject{
             .base = HeapObject{ .obj_type = ObjType.object },
             .properties = std.StringHashMap(Value).init(allocator),
+            .proto = proto,
         };
     }
 
@@ -34,6 +36,14 @@ pub const ObjObject = struct {
         self: *ObjObject,
         key: String,
     ) Value {
-        return self.properties.get(key) orelse Value{ .undefined = {} };
+        if (self.properties.get(key)) |val| {
+            return val;
+        }
+
+        if (self.proto) |p| {
+            return p.get(key);
+        }
+
+        return Value{ .undefined = {} };
     }
 };

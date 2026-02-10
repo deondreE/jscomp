@@ -36,9 +36,9 @@ pub const Runtime = struct {
         obj.marked = false;
     }
 
-    pub fn newObject(self: *Runtime) !Value {
+    pub fn newObject(self: *Runtime, proto: ?*ObjObject) !Value {
         const obj = try self.allocator.create(ObjObject);
-        obj.* = ObjObject.init(self.allocator);
+        obj.* = ObjObject.init(self.allocator, proto);
         // try self.objects.append(self.allocator, &obj.base);
         self.trackObject(&obj.base);
         return Value{ .object = &obj.base };
@@ -106,6 +106,11 @@ pub const Runtime = struct {
                 const aligned_base: *align(@alignOf(ObjObject)) HeapObject =
                     @alignCast(obj.*);
                 const actual: ObjObject = @fieldParentPtr("base", aligned_base);
+
+                if (actual.proto) |p| {
+                    self.markValue(Value{ .object = &p.base });
+                }
+
                 var it = actual.properties.iterator();
                 while (it.next()) |v| {
                     self.markValue(v.*);
