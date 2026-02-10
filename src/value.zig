@@ -1,5 +1,6 @@
 const std = @import("std");
 const HeapObject = @import("heap_object.zig").HeapObject;
+const ObjString = @import("obj_string.zig").ObjString;
 
 pub const ValueTag = enum {
     number,
@@ -22,7 +23,16 @@ pub const Value = union(ValueTag) {
             .boolean => |b| std.debug.print("{}", .{b}),
             .null => std.debug.print("null", .{}),
             .undefined => std.debug.print("undefined", .{}),
-            .object => |_| std.debug.print("[object]", .{}),
+            .object => |ptr| {
+                switch (ptr.obj_type) {
+                    .string => {
+                        const s: ObjString = @fieldParentPtr("base", ptr);
+                        std.debug.print("\"{s}\"", .{s.data});
+                    },
+                    .function => std.debug.print("[function]", .{}),
+                    .object => std.debug.print("[object]", .{}),
+                }
+            },
         }
     }
 };
